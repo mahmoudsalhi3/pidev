@@ -167,7 +167,7 @@ public function new(Request $request, EntityManagerInterface $entityManager): Re
         }
 
         // Redirect back to the homepage after submission.
-        return $this->redirectToRoute('app_home');
+        return $this->redirectToRoute('app_home_interests');
     }
 
     #[Route('/{id}/add-tag', name: 'app_post_add_tag', methods: ['POST'])]
@@ -208,5 +208,42 @@ public function new(Request $request, EntityManagerInterface $entityManager): Re
         // Redirect back to the post page or post list
         return $this->redirectToRoute('app_post_show', ['id' => $postId]);
     }
+    #[Route('/home/interests', name: 'app_home_interests', methods: ['GET', 'POST'])]
+    public function interests(Request $request, PostRepository $postRepository, EntityManagerInterface $entityManager): Response
+    {
+        // Get all tags for the selection
+        $allTags = $entityManager->getRepository(Tag::class)->findAll();
+    
+        // Retrieve the selected tags safely (using the all() method to avoid scalar default issues)
+        $allRequest = $request->request->all();
+        $selectedTagsIds = isset($allRequest['tags']) ? $allRequest['tags'] : [];
+    
+        // Filter posts based on the selected tags
+        if (!empty($selectedTagsIds)) {
+            $selectedTags = $entityManager->getRepository(Tag::class)->findBy(['id' => $selectedTagsIds]);
+            $posts = $postRepository->findPostsByTags($selectedTags); // Make sure this method exists in your repository
+        } else {
+            $posts = $postRepository->findAll();
+        }
+    
+        // Prepare comment forms for each post
+        $forms = [];
+        foreach ($posts as $post) {
+            $comment = new Comment();
+            $form = $this->createForm(CommentType::class, $comment);
+            $forms[$post->getId()] = $form->createView();
+        }
+    
+        return $this->render('home/interests.html.twig', [
+            'posts' => $posts,
+            'allTags' => $allTags,
+            'selectedTags' => $selectedTagsIds,
+            'forms' => $forms, // Now the template can access the "forms" variable
+        ]);
+    }
+    
+
+
+    
 
 }

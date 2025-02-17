@@ -16,6 +16,20 @@ class PostRepository extends ServiceEntityRepository
         parent::__construct($registry, Post::class);
     }
 
+    // PostRepository Method
+// src/Repository/PostRepository.php
+
+public function findPostsByTags(array $tags)
+{
+    return $this->createQueryBuilder('p')
+        ->join('p.tags', 't')
+        ->where('t IN (:tags)')
+        ->setParameter('tags', $tags)
+        ->getQuery()
+        ->getResult();
+}
+
+
 //    /**
 //     * @return Post[] Returns an array of Post objects
 //     */
